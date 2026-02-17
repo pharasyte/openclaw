@@ -33,6 +33,7 @@ type SessionRow = {
   outputTokens?: number;
   totalTokens?: number;
   totalTokensFresh?: boolean;
+  modelProvider?: string;
   model?: string;
   modelProvider?: string;
   providerOverride?: string;
@@ -156,6 +157,7 @@ function toRows(store: Record<string, SessionEntry>): SessionRow[] {
         outputTokens: entry?.outputTokens,
         totalTokens: entry?.totalTokens,
         totalTokensFresh: entry?.totalTokensFresh,
+        modelProvider: entry?.modelProvider,
         model: entry?.model,
         modelProvider: entry?.modelProvider,
         providerOverride: entry?.providerOverride,
@@ -178,7 +180,7 @@ export async function sessionsCommand(
   });
   const configContextTokens =
     cfg.agents?.defaults?.contextTokens ??
-    lookupContextTokens(resolved.model) ??
+    lookupContextTokens({ provider: resolved.provider, modelId: resolved.model }) ??
     DEFAULT_CONTEXT_TOKENS;
   const configModel = resolved.model ?? DEFAULT_MODEL;
   const storePath = resolveStorePath(opts.store ?? cfg.session?.store);
@@ -225,7 +227,10 @@ export async function sessionsCommand(
               totalTokensFresh:
                 typeof r.totalTokens === "number" ? r.totalTokensFresh !== false : false,
               contextTokens:
-                r.contextTokens ?? lookupContextTokens(model) ?? configContextTokens ?? null,
+                r.contextTokens ??
+                lookupContextTokens({ provider: resolvedModel.provider, modelId: model }) ??
+                configContextTokens ??
+                null,
               model,
             };
           }),
@@ -262,7 +267,10 @@ export async function sessionsCommand(
   for (const row of rows) {
     const resolvedModel = resolveSessionModelRef(cfg, row, parseAgentSessionKey(row.key)?.agentId);
     const model = resolvedModel.model ?? configModel;
-    const contextTokens = row.contextTokens ?? lookupContextTokens(model) ?? configContextTokens;
+    const contextTokens =
+      row.contextTokens ??
+      lookupContextTokens({ provider: resolvedModel.provider, modelId: model }) ??
+      configContextTokens;
     const total = resolveFreshSessionTotalTokens(row);
 
     const keyLabel = truncateKey(row.key).padEnd(KEY_PAD);

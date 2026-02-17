@@ -106,7 +106,7 @@ export async function getStatusSummary(
   const configModel = resolved.model ?? DEFAULT_MODEL;
   const configContextTokens =
     cfg.agents?.defaults?.contextTokens ??
-    lookupContextTokens(configModel) ??
+    lookupContextTokens({ provider: resolved.provider, modelId: configModel }) ??
     DEFAULT_CONTEXT_TOKENS;
 
   const now = Date.now();
@@ -132,7 +132,7 @@ export async function getStatusSummary(
         const resolvedModel = resolveSessionModelRef(cfg, entry, opts.agentIdOverride);
         const model = resolvedModel.model ?? configModel ?? null;
         const contextTokens =
-          entry?.contextTokens ?? lookupContextTokens(model) ?? configContextTokens ?? null;
+          entry?.contextTokens ?? lookupContextTokens({ provider: entry?.modelProvider, modelId: model }) ?? configContextTokens ?? null;
         const total = resolveFreshSessionTotalTokens(entry);
         const totalTokensFresh =
           typeof entry?.totalTokens === "number" ? entry?.totalTokensFresh !== false : false;
